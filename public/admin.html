@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Dashboard — Pengaduan Sarana Sekolah</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <!-- Navbar -->
+  <nav class="bg-blue-700 text-white px-6 py-4 flex justify-between items-center shadow">
+    <h1 class="text-lg font-bold">Dashboard Admin</h1>
+    <button onclick="logout()" class="bg-blue-800 hover:bg-blue-900 px-4 py-2 rounded text-sm">Logout</button>
+  </nav>
+
+  <div class="max-w-6xl mx-auto p-6">
+    <!-- Filter -->
+    <div class="bg-white rounded-lg shadow p-4 mb-6">
+      <h2 class="text-sm font-semibold text-gray-600 mb-3">Filter Aspirasi</h2>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <input type="date" id="f-tanggal" class="border rounded px-3 py-2 text-sm" />
+        <input type="month" id="f-bulan" class="border rounded px-3 py-2 text-sm" />
+        <input type="number" id="f-nis" placeholder="NIS" class="border rounded px-3 py-2 text-sm" />
+        <select id="f-status" class="border rounded px-3 py-2 text-sm">
+          <option value="">Semua Status</option>
+          <option value="Menunggu">Menunggu</option>
+          <option value="Proses">Proses</option>
+          <option value="Selesai">Selesai</option>
+        </select>
+        <button onclick="loadAspirasi()"
+          class="bg-blue-600 text-white rounded px-4 py-2 text-sm hover:bg-blue-700">Cari</button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-600">
+          <tr>
+            <th class="px-4 py-3 text-left">#</th>
+            <th class="px-4 py-3 text-left">Tanggal</th>
+            <th class="px-4 py-3 text-left">Siswa</th>
+            <th class="px-4 py-3 text-left">Kategori</th>
+            <th class="px-4 py-3 text-left">Lokasi</th>
+            <th class="px-4 py-3 text-left">Keterangan</th>
+            <th class="px-4 py-3 text-left">Status</th>
+            <th class="px-4 py-3 text-left">Feedback</th>
+            <th class="px-4 py-3 text-left">Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="table-body" class="divide-y">
+          <tr><td colspan="9" class="px-4 py-8 text-center text-gray-400">Memuat data...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Modal Status -->
+  <div id="modal-status" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-sm">
+      <h3 class="text-lg font-bold mb-4">Ubah Status</h3>
+      <input type="hidden" id="status-id" />
+      <select id="status-value" class="w-full border rounded px-3 py-2 mb-4">
+        <option value="Menunggu">Menunggu</option>
+        <option value="Proses">Proses</option>
+        <option value="Selesai">Selesai</option>
+      </select>
+      <div class="flex gap-2">
+        <button onclick="submitStatus()" class="flex-1 bg-blue-600 text-white py-2 rounded hover:bg-blue-700">Simpan</button>
+        <button onclick="closeModal('modal-status')" class="flex-1 bg-gray-200 py-2 rounded hover:bg-gray-300">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Feedback -->
+  <div id="modal-feedback" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 w-full max-w-sm">
+      <h3 class="text-lg font-bold mb-4">Berikan Feedback</h3>
+      <input type="hidden" id="feedback-id" />
+      <textarea id="feedback-value" rows="4"
+        class="w-full border rounded px-3 py-2 mb-4" placeholder="Tulis umpan balik..."></textarea>
+      <div class="flex gap-2">
+        <button onclick="submitFeedback()" class="flex-1 bg-green-600 text-white py-2 rounded hover:bg-green-700">Simpan</button>
+        <button onclick="closeModal('modal-feedback')" class="flex-1 bg-gray-200 py-2 rounded hover:bg-gray-300">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('token');
+    if (!token || localStorage.getItem('role') !== 'admin') {
+      window.location.href = '/login.html';
+    }
+
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + token,
+    };
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = '/login.html';
+    }
+
+    function statusBadge(status) {
+      const colors = {
+        Menunggu: 'bg-yellow-100 text-yellow-700',
+        Proses: 'bg-blue-100 text-blue-700',
+        Selesai: 'bg-green-100 text-green-700',
+      };
+      return `<span class="px-2 py-1 rounded-full text-xs font-medium ${colors[status] || ''}">${status}</span>`;
+    }
+
+    function formatDate(d) {
+      if (!d) return '-';
+      return new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    async function loadAspirasi() {
+      const params = new URLSearchParams();
+      const tanggal = document.getElementById('f-tanggal').value;
+      const bulan = document.getElementById('f-bulan').value;
+      const nis = document.getElementById('f-nis').value;
+      const status = document.getElementById('f-status').value;
+
+      if (tanggal) params.set('tanggal', tanggal);
+      if (bulan) params.set('bulan', bulan);
+      if (nis) params.set('nis', nis);
+      if (status) params.set('status', status);
+
+      try {
+        const res = await fetch('/api/admin/aspirasi?' + params.toString(), { headers });
+        if (res.status === 401 || res.status === 403) return logout();
+        const json = await res.json();
+        renderTable(json.data || []);
+      } catch {
+        document.getElementById('table-body').innerHTML =
+          '<tr><td colspan="9" class="px-4 py-8 text-center text-red-500">Gagal memuat data</td></tr>';
+      }
+    }
+
+    function renderTable(rows) {
+      const tbody = document.getElementById('table-body');
+      if (rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-400">Tidak ada data</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map((r, i) => `
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3">${i + 1}</td>
+          <td class="px-4 py-3">${formatDate(r.createdAt)}</td>
+          <td class="px-4 py-3">${r.namaSiswa || r.nis}</td>
+          <td class="px-4 py-3">${r.ketKategori || '-'}</td>
+          <td class="px-4 py-3">${r.lokasi}</td>
+          <td class="px-4 py-3 max-w-[200px] truncate">${r.keterangan}</td>
+          <td class="px-4 py-3">${statusBadge(r.status)}</td>
+          <td class="px-4 py-3 max-w-[150px] truncate">${r.feedback || '<span class="text-gray-300">-</span>'}</td>
+          <td class="px-4 py-3">
+            <div class="flex gap-1">
+              <button onclick="openStatus(${r.idAspirasi}, '${r.status}')"
+                class="bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs hover:bg-blue-200">Status</button>
+              <button onclick="openFeedback(${r.idAspirasi}, '${(r.feedback || '').replace(/'/g, "\\'")}')"
+                class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs hover:bg-green-200">Feedback</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openStatus(id, current) {
+      document.getElementById('status-id').value = id;
+      document.getElementById('status-value').value = current;
+      document.getElementById('modal-status').classList.remove('hidden');
+    }
+
+    function openFeedback(id, current) {
+      document.getElementById('feedback-id').value = id;
+      document.getElementById('feedback-value').value = current;
+      document.getElementById('modal-feedback').classList.remove('hidden');
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+
+    async function submitStatus() {
+      const id = document.getElementById('status-id').value;
+      const status = document.getElementById('status-value').value;
+      await fetch(`/api/admin/aspirasi/${id}/status`, {
+        method: 'PUT', headers, body: JSON.stringify({ status }),
+      });
+      closeModal('modal-status');
+      loadAspirasi();
+    }
+
+    async function submitFeedback() {
+      const id = document.getElementById('feedback-id').value;
+      const feedback = document.getElementById('feedback-value').value;
+      await fetch(`/api/admin/aspirasi/${id}/feedback`, {
+        method: 'PUT', headers, body: JSON.stringify({ feedback }),
+      });
+      closeModal('modal-feedback');
+      loadAspirasi();
+    }
+
+    loadAspirasi();
+  </script>
+</body>
+</html>
