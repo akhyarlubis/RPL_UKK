@@ -6,15 +6,19 @@
     "start": "bun run src/index.ts",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
-    "db:migrate": "drizzle-kit migrate"
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "bun run src/db/seed.ts"
   },
   "dependencies": {
     "elysia": "latest",
+    "@elysiajs/jwt": "latest",
     "drizzle-orm": "latest",
-    "mysql2": "latest"
+    "mysql2": "latest",
+    "bcryptjs": "latest"
   },
   "devDependencies": {
     "drizzle-kit": "latest",
-    "bun-types": "latest"
+    "bun-types": "latest",
+    "@types/bcryptjs": "latest"
   }
 }

@@ -1,7 +1,13 @@
 import { Elysia } from "elysia";
+import { authRoutes } from "./routes/auth-routes";
+import { adminRoutes } from "./routes/admin-routes";
+import { siswaRoutes } from "./routes/siswa-routes";
 
 const app = new Elysia()
-  .get("/", () => ({ message: "Hello, World!" }))
+  .use(authRoutes)
+  .use(adminRoutes)
+  .use(siswaRoutes)
+  .get("/", () => ({ message: "Aplikasi Pengaduan Sarana Sekolah" }))
   .onError(({ code, error }) => {
     return { error: error.message, code };
   })
