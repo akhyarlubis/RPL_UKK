@@ -12,6 +12,7 @@
   "dependencies": {
     "elysia": "latest",
     "@elysiajs/jwt": "latest",
+    "@elysiajs/static": "latest",
     "drizzle-orm": "latest",
     "mysql2": "latest",
     "bcryptjs": "latest"
