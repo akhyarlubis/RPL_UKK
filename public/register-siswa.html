@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register Siswa — Pengaduan Sarana Sekolah</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  <div class="bg-white shadow-lg rounded-lg p-8 w-full max-w-md">
+    <h1 class="text-2xl font-bold text-center text-gray-800 mb-2">Registrasi Siswa</h1>
+    <p class="text-center text-gray-500 mb-6">Buat akun siswa baru</p>
+
+    <form onsubmit="registerSiswa(event)">
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">NIS</label>
+        <input type="number" id="nis" required
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+          placeholder="Masukkan NIS" />
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+        <input type="text" id="nama_siswa" required
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+          placeholder="Nama lengkap siswa" />
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Kelas</label>
+        <input type="text" id="kelas" required
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+          placeholder="Contoh: 10A" />
+      </div>
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        <input type="password" id="password" required minlength="6"
+          class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-500"
+          placeholder="Minimal 6 karakter" />
+      </div>
+      <button type="submit"
+        class="w-full bg-green-600 text-white py-2 rounded-lg font-medium hover:bg-green-700 transition">
+        Daftar
+      </button>
+    </form>
+
+    <div id="error-msg" class="mt-4 text-red-600 text-sm text-center hidden"></div>
+
+    <p class="text-center text-gray-400 text-xs mt-6">
+      Sudah punya akun? <a href="/login.html" class="text-green-500 hover:underline">Login di sini</a>
+    </p>
+  </div>
+
+  <script>
+    function showError(msg) {
+      const el = document.getElementById('error-msg');
+      el.textContent = msg;
+      el.classList.remove('hidden');
+    }
+
+    async function registerSiswa(e) {
+      e.preventDefault();
+      const nis = Number(document.getElementById('nis').value);
+      const nama_siswa = document.getElementById('nama_siswa').value;
+      const kelas = document.getElementById('kelas').value;
+      const password = document.getElementById('password').value;
+
+      try {
+        const res = await fetch('/api/auth/register-siswa', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ nis, nama_siswa, kelas, password }),
+        });
+        const data = await res.json();
+        if (!res.ok) return showError(data.error);
+
+        localStorage.setItem('token', data.data);
+        localStorage.setItem('role', 'siswa');
+        window.location.href = '/siswa.html';
+      } catch {
+        showError('Gagal terhubung ke server');
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 import { Elysia, t } from "elysia";
 import { jwt } from "@elysiajs/jwt";
-import { registerAdmin, loginAdmin, loginSiswa } from "../services/auth-service";
+import { registerAdmin, registerSiswa, loginAdmin, loginSiswa } from "../services/auth-service";
 
 export const authRoutes = new Elysia({ prefix: "/api/auth" })
   .use(
@@ -31,6 +31,32 @@ export const authRoutes = new Elysia({ prefix: "/api/auth" })
       body: t.Object({
         nama: t.String(),
         email: t.String(),
+        password: t.String(),
+      }),
+    }
+  )
+  .post(
+    "/register-siswa",
+    async ({ body, jwt }) => {
+      try {
+        const user = await registerSiswa(body.nis, body.nama_siswa, body.kelas, body.password);
+        const token = await jwt.sign({
+          nis: String(user.nis),
+          role: user.role,
+        });
+        return { data: token };
+      } catch (e: any) {
+        return new Response(JSON.stringify({ error: e.message }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        });
+      }
+    },
+    {
+      body: t.Object({
+        nis: t.Number(),
+        nama_siswa: t.String(),
+        kelas: t.String(),
         password: t.String(),
       }),
     }

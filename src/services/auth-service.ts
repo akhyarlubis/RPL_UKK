@@ -50,6 +50,34 @@ export async function loginAdmin(email: string, password: string) {
   return { id: user.id, email: user.email, role: "admin" as const };
 }
 
+export async function registerSiswa(
+  nis: number,
+  namaSiswa: string,
+  kelas: string,
+  password: string
+) {
+  const existing = await db
+    .select()
+    .from(siswa)
+    .where(eq(siswa.nis, nis))
+    .limit(1);
+
+  if (existing.length > 0) {
+    throw new Error("NIS sudah terdaftar");
+  }
+
+  const hashed = await hash(password, 10);
+
+  await db.insert(siswa).values({
+    nis,
+    namaSiswa,
+    kelas,
+    password: hashed,
+  });
+
+  return { nis, nama: namaSiswa, role: "siswa" as const };
+}
+
 export async function loginSiswa(nis: number, password: string) {
   const rows = await db
     .select()
